@@ -8,5 +8,7 @@ class mcollective::server::config::connector::activemq {
   # 1-based)
   $pool_size = size(flatten([$mcollective::middleware_hosts]))
   $indexes = range('1', $pool_size)
-  mcollective::server::config::connector::activemq::hosts_iteration { $indexes: }
+  # XXX resource titles should be strings with future parser
+  $stringified_indexes = prefix($indexes, '')
+  mcollective::server::config::connector::activemq::hosts_iteration { $stringified_indexes: }
 }
