@@ -15,7 +15,7 @@
 ## Overview
 
 The mcollective module installs, configures, and manages the mcollective
-agents, clients, and middleware of an mcollective cluster.
+agents, and clients of an MCollective cluster.
 
 ## Module Description
 
@@ -55,11 +55,6 @@ On a client
 * mcollective client configuration file
 * optionally user configuration files (~/.mcollective and ~/.mcollective.d)
 
-On a middleware host
-
-* broker installation
-* broker configuration
-
 ### Beginning with mcollective
 
 Your main entrypoint to the mcollective module is the mcollective class, so
@@ -83,10 +78,7 @@ mcollective class, with secondary configuration managed by the defined types
 
 ```puppet
 node 'broker1.example.com' {
-  class { '::mcollective':
-    middleware       => true,
-    middleware_hosts => [ 'broker1.example.com' ],
-  }
+  include activemq
 }
 
 node 'server1.example.com' {
@@ -121,16 +113,9 @@ for more information about how to generate these.
 
 ```puppet
 node 'broker1.example.com' {
-  class { '::mcollective':
-    middleware         => true,
-    middleware_hosts   => [ 'broker1.example.com' ],
-    middleware_ssl     => true,
-    securityprovider   => 'ssl',
-    ssl_client_certs   => 'puppet:///modules/site_mcollective/client_certs',
-    ssl_ca_cert        => 'puppet:///modules/site_mcollective/certs/ca.pem',
-    ssl_server_public  => 'puppet:///modules/site_mcollective/certs/server.pem',
-    ssl_server_private => 'puppet:///modules/site_mcollective/private_keys/server.pem',
-  }
+  # Please see
+  # https://github.com/puppetlabs/puppetlabs-mcollective/blob/master/examples/mco_profile/manifests/middleware/activemq.pp
+  # for this as setting up activemq with a truststore can be quite complex.
 }
 
 node 'server1.example.com' {
@@ -193,70 +178,10 @@ node.
 Boolean: defaults to false.  Whether to install the mcollective client
 application on this node.
 
-##### `middleware`
-
-Boolean: defaults to false.  Whether to install middleware that matches
-`$mcollective::connector` on this node.
-
-
-##### `activemq_template`
-
-String: defaults to 'mcollective/activemq.xml.erb'.  Template to use when
-configuring activemq middleware.
-
-##### `activemq_console`
-
-Boolean: defaults to false.  Whether to enable the jetty admin console when
-configuring the activemq middleware.
-
-##### `activemq_config`
-
-String: defaults to undef.  If supplied the contents of the activemq.xml
-configuration file to use when configuring activemq middleware.  Bypasses
-`mcollective::activemq_template`
-
-##### `activemq_confdir`
-
-String: default based on distribution.  The directory to copy ssl certificates
-to when configuring activemq middleware with `mcollective::middleware_ssl`.
-
-##### `activemq_memoryUsage`
-
-String: default "20 mb". The amount of memory ActiveMQ will take up with *actual
-messages*; it doesn't include things like thread management. See
-[ActiveMQ - Memory and Temp Usage for Messages (systemUsage)](http://docs.puppetlabs.com/mcollective/deploy/middleware/activemq.html#memory-and-temp-usage-for-messages-systemusage)
-for further information. String must match '^[0-9]+ [kmg]b$'.
-
-##### `activemq_storeUsage`
-
-String: default "1 gb". The amount of disk space ActiveMQ will use for stashing
-non-persisted messages if the memoryUsage is exceeded (e.g. in the event of a
-sudden flood of messages). See
-[ActiveMQ - Memory and Temp Usage for Messages (systemUsage)](http://docs.puppetlabs.com/mcollective/deploy/middleware/activemq.html#memory-and-temp-usage-for-messages-systemusage)
-for further information. String must match '^[0-9]+ [kmg]b$'.
-
-##### `activemq_tempUsage`
-
-String: default "100 mb". The amount of disk space dedicated to persistent messages
-(which MCollective doesn't use directly, but which may be used in networks of brokers
-to avoid duplicates). See
-[ActiveMQ - Memory and Temp Usage for Messages (systemUsage)](http://docs.puppetlabs.com/mcollective/deploy/middleware/activemq.html#memory-and-temp-usage-for-messages-systemusage)
-for further information. String must match '^[0-9]+ [kmg]b$'.
-
-##### `rabbitmq_confdir`
-
-String: defaults to '/etc/rabbitmq'. The directory to copy ssl certificates to
-when configuring rabbitmq middleware with `mcollective::middleware_ssl`.
-
 ##### `rabbitmq_vhost`
 
 String: defaults to '/mcollective'.  The vhost to connect to/manage when using
 rabbitmq middleware.
-
-##### `delete_guest_user`
-
-Boolean: defaults to 'false'.  Whether to delete the rabbitmq guest user when
-setting up rabbitmq middleware.
 
 ##### `manage_packages`
 
@@ -310,15 +235,6 @@ server.
 String: defaults to '/etc/mcollective/facts.yaml'.  Name of the file the
 'yaml' factsource plugin should load facts from.
 
-##### `excluded_facts`
-Array: defaults to []. List of facts to exclude from facts.yaml when
-`factsource` is 'yaml'. This is useful for preventing dynamic facts (that
-change on each Puppet run) from ending up in facts.yaml, which would trigger
-restarts of Mcollective. A default list of facts to ignore is managed
-internally: `uptime.*`, `rubysitedir`, `_timestamp`, `memoryfree.*`,
-`swapfree.*` and `last_run`. Note that the fact names can be Ruby regular
-expressions.
-
 ##### `classesfile`
 
 String: defaults to '/var/lib/puppet/state/classes.txt'.  Name of the file the
@@ -369,8 +285,8 @@ middleware.
 
 ##### `middleware_port`
 
-String: defaults to '61613'.  Port number to use when connecting to the
-middleware over an unencrypted connection.
+String: defaults to '61613' (for `activemq`).  Port number to use when
+connecting to the middleware over an unencrypted connection.
 
 ##### `middleware_ssl_port`
 
@@ -395,7 +311,7 @@ admin user.
 
 ##### `server_config_file`
 
-String: default is '/etc/mcollective/server.cfg'.  Path to the server
+String: default is '$confdir/server.cfg'.  Path to the server
 configuration file.
 
 ##### `server_logfile`
@@ -409,12 +325,12 @@ String: defaults to 'info'.  Level the mcollective server should log at.
 
 ##### `server_daemonize`
 
-String: defaults to '1'.  Should the mcollective server daemonize when
+Boolean: defaults to true.  Should the mcollective server daemonize when
 started.
 
 ##### `client_config_file`
 
-String: defaults to '/etc/mcollective/client.cfg'.  Path to the client
+String: defaults to '$confdir/client.cfg'.  Path to the client
 configuration file.
 
 ##### `client_logger_type`
@@ -560,7 +476,8 @@ String: defaults to 'deny'.  The default actionpolicy to apply to the agent.
 ### `mcollective::actionpolicy::rule` defined type
 
 `mcollective::actionpolicy::rule` represents a single actionpolicy policy
-entry.
+entry. See the actionpolicy plugin [Policy File Format](https://github.com/puppetlabs/mcollective-actionpolicy-auth#policy-file-format)
+for specific restrictions on the values of these fields.
 
 #### Parameters
 
@@ -586,9 +503,11 @@ String: defaults to '*'.  What callerids should match this rule.
 
 String: defaults to '*'.  What actions should match this rule.
 
-##### `facts`
+##### `fact_filter`
 
-String: defaults to '*'.  What facts should match this rule.
+String: defaults to '*'.  What facts should match this rule. This can be either
+'*', a space-separated list of ``fact=value`` pairs (which match if every listed
+fact matches), or any valid [compound filter string](http://docs.puppetlabs.com/mcollective/reference/basic/basic_cli_usage.html#complex-compound-or-select-queries). This matches the "facts" field of the policy file lines.
 
 ##### `classes`
 
@@ -672,6 +591,16 @@ String: no default.  The value to set.
 
 String: default '70'.  The order in which to merge this setting.
 
+### `mcollective::server::config::factsource::yaml` private class
+
+`mcollective::server::config::factsource::yaml` is the class that implements cron-based fact generation and configures MCollective to use it. It is a private class and so may not be declared directly, but rather is invoked when the `mcollective` class is declared with the `factsource` parameter set to `yaml` (the default). Although `mcollective::server::config::factsource::yaml` is private it does have one parameter which can be tuned using data bindings (e.g. Hiera).
+
+#### Parameters
+
+##### `path`
+
+String: default $::path. What PATH environment variable to use when refresh-mcollective-metadata is invoked by cron.
+
 ## Reference
 
 ### Configuration merging
@@ -736,10 +665,10 @@ Testing on other platforms has been light and cannot be guaranteed.
 
 ## Development
 
-Puppet Labs modules on the Puppet Forge are open projects, and community
-contributions are essential for keeping them great. We can’t access the
-huge number of platforms and myriad of hardware, software, and deployment
-configurations that Puppet is intended to serve.
+Puppet Community modules on are open projects, and community contributions are
+essential for keeping them great. We can’t access the huge number of platforms
+and myriad of hardware, software, and deployment configurations that Puppet is
+intended to serve.
 
 We want to keep it as easy as possible to contribute changes so that our
 modules work in your environment. There are a few guidelines that we need

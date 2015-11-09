@@ -8,6 +8,7 @@ class mcollective::common::config {
     ensure       => directory,
     owner        => 'root',
     group        => '0',
+    mode         => '0644',
     recurse      => true,
     purge        => true,
     force        => true,
@@ -31,7 +32,7 @@ class mcollective::common::config {
     target => 'mcollective::site_libdir',
     data   => {
       source_path => [ 'puppet:///modules/mcollective/site_libdir' ],
-    }
+    },
   }
 
   mcollective::common::setting { 'libdir':
@@ -53,6 +54,11 @@ class mcollective::common::config {
   mcollective::common::setting { 'main_collective':
     value => $mcollective::main_collective,
   }
+
+  mcollective::common::setting { 'identity':
+    value => $mcollective::identity,
+  }
+
 
   mcollective::soft_include { [
     "::mcollective::common::config::connector::${mcollective::connector}",

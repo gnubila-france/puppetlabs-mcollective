@@ -13,7 +13,7 @@ class mcollective::common::config::connector::rabbitmq {
   }
 
   mcollective::common::setting { 'plugin.rabbitmq.randomize':
-    value => 'true',
+    value => true,
   }
 
   $pool_size = size(flatten([$mcollective::middleware_hosts]))
@@ -21,6 +21,11 @@ class mcollective::common::config::connector::rabbitmq {
     value => $pool_size,
   }
 
-  $indexes = range('1', $pool_size)
+  $indexes = mco_array_to_string(range('1', $pool_size))
   mcollective::common::config::connector::rabbitmq::hosts_iteration { $indexes: }
+  
+  mcollective::common::setting { 'plugin.rabbitmq.heartbeat_interval':
+    value => $mcollective::middleware_heartbeat_interval,
+  }
+
 }

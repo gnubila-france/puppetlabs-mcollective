@@ -10,7 +10,7 @@ class mcollective (
   $ruby_stomp_ensure = 'installed',
 
   # core configuration
-  $confdir          = '/etc/mcollective',
+  $confdir          = $mcollective::defaults::confdir,
   $main_collective  = 'mcollective',
   $collectives      = 'mcollective',
   $connector        = 'activemq',
@@ -18,13 +18,14 @@ class mcollective (
   $psk              = 'changemeplease',
   $factsource       = 'yaml',
   $yaml_fact_path   = undef,
-  $excluded_facts   = [],
+  $yaml_fact_cron   = true,
   $classesfile      = '/var/lib/puppet/state/classes.txt',
   $rpcauthprovider  = 'action_policy',
   $rpcauditprovider = 'logfile',
   $registration     = undef,
   $core_libdir      = $mcollective::defaults::core_libdir,
   $site_libdir      = $mcollective::defaults::site_libdir,
+  $identity         = $fqdn,
 
   # networking
   $middleware_hosts          = [],
@@ -36,6 +37,7 @@ class mcollective (
   $middleware_ssl_fallback   = false,
   $middleware_admin_user     = 'admin',
   $middleware_admin_password = 'secret',
+  $middleware_heartbeat_interval = '30',
 
   # middleware connector tweaking
   $rabbitmq_vhost = '/mcollective',
@@ -44,7 +46,7 @@ class mcollective (
   $server_config_file = undef, # default dependent on $confdir
   $server_logfile     = '/var/log/mcollective.log',
   $server_loglevel    = 'info',
-  $server_daemonize   = 1,
+  $server_daemonize   = $mcollective::defaults::server_daemonize,
   $service_name       = 'mcollective',
   $server_package     = 'mcollective',
   $ruby_stomp_package = 'ruby-stomp',
@@ -63,6 +65,9 @@ class mcollective (
   $ssl_client_certs_dir = undef, # default dependent on $confdir
   $ssl_shared_server_public = undef,
   $ssl_shared_server_private = undef,
+
+  # Action policy settings
+  $allowunconfigured    = '1',
 ) inherits mcollective::defaults {
 
   # Because the correct default value for several parameters is based on another
